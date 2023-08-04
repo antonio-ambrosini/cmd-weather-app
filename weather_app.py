@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 def get_key():
     load_dotenv("config/.env")
-    return os.getenv("API_KEY")
+    return os.getenv("WEATHER_API_KEY")
 
 
 def get_user_config():
@@ -42,7 +42,7 @@ you can go to the settings menu and make the necessary changes.""")
 def get_default_config():
     return {
         "Name"     : "New User",
-        "Location" : ""   
+        "Location" : get_default_location()   
         }
 
 
@@ -79,13 +79,25 @@ def prompt_user_for_config():
     return data
 
 
+def get_location_key():
+    load_dotenv("config/.env")
+    return {
+        'Authorization': f'Bearer {os.getenv("LOCATION_API_KEY")}'
+    } 
+
+
+def get_default_location():
+    response = requests.get('http://ipinfo.io', get_location_key())
+    return response.json()["city"]
+
+
 def main():
     user_settings = get_user_config()
 
 
-
 if __name__ == "__main__":
     main()
+
     # configure user settings - ask user what their location is etc, and then
     # store this info. then each time the user runs the program we can read their settings
     # or let them configure it if it's their first time
