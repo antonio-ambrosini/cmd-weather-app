@@ -24,19 +24,22 @@ def read_user_config():
     with open("config/user_settings.json", "r") as settings:
         config = json.load(settings)
     
-    print(f"Welcome back {config['Name']}!")
+    print(f"Welcome back {config['Name'].title()}!")
     return config
 
 
 def create_user_config():
-    
+    config = prompt_user_for_config()
+
     with open("config/user_settings.json", 'w') as settings:
-        json.dump(prompt_user_for_config(), settings, indent=4)
+        json.dump(config, settings, indent=4)
     
     # when adding the GUI there should be a settings button which will allow the user to change
     # their settings
     print("""Your settings has been saved. If you made a mistake or would like to change your settings
 you can go to the settings menu and make the necessary changes.""")
+
+    return config
 
 
 def get_default_config():
@@ -69,12 +72,12 @@ settings based on your current location? (configure/default):\n""")
 def prompt_user_for_config():
     data = {
         "Name"     : "Please enter your name:",
-        "Location" : "What is your current location?"
+        "Location" : "What city are you located in?"
     }
 
     print("Let's configure your settings...\n")
     for key,value in data.items():
-        data[key] = input(value + "\n")        
+        data[key] = input(value + "\n").lower().strip()       
 
     return data
 
@@ -91,16 +94,79 @@ def get_default_location():
     return response.json()["city"]
 
 
+def get_commands():
+    return {
+        "1" : "current weather",
+        "2" : "3-day forecast",
+        "3" : "7-day forecast",
+        "4" : "sports",
+        "5" : "astronomy"
+    }
+
+
+def display_commands(commands):
+    for number,command in commands.items():
+        print(f"{number}. {command.title()}")
+
+
+def get_user_command():
+    commands = get_commands()
+    display_commands(commands)
+
+    while True:
+        command = input("Enter the number of the command that you want to perform: ").strip()
+
+        if command in commands:
+            return commands[command]
+        
+        print(f"Invalid command '{command}'. Please enter a valid command.") 
+
+
+def get_url(command):
+    base_url = "https://api.weatherapi.com/v1/"
+
+    match command:
+        case "current weather":
+            return base_url + "current.json"
+
+
+def create_request(command, settings):
+    return {
+        "url"    : get_url(command),
+        "config" : {
+            'key': get_key(),
+            'q': settings["Location"]
+        }
+    }
+
+
+def get_response(request):
+    response = requests.get(request["url"], request["config"])
+    return response.json()
+
+
+def run_weather_app(settings):
+    command = get_user_command()
+    
+    request = create_request(command, settings)
+
+    response = get_response(request)
+
+    print(response)
+
+
 def main():
     user_settings = get_user_config()
+    run_weather_app(user_settings)
+
+    
 
 
 if __name__ == "__main__":
     main()
 
-    # configure user settings - ask user what their location is etc, and then
-    # store this info. then each time the user runs the program we can read their settings
-    # or let them configure it if it's their first time
-
     # also we can have an option to let the user change their settings if for
     # example they relocate
+
+    # add section where once the request is made we check the response code using switch case and 
+    # depending on the code we perform certain tasks
