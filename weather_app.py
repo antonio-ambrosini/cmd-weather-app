@@ -99,7 +99,7 @@ def get_commands():
         "1" : "current weather",
         "2" : "3-day forecast",
         "3" : "7-day forecast",
-        "4" : "sports",
+        "4" : "history",
         "5" : "astronomy"
     }
 
@@ -124,10 +124,20 @@ def get_user_command():
 
 def get_url(command):
     base_url = "https://api.weatherapi.com/v1/"
+    suffix = ".json"
 
     match command:
         case "current weather":
-            return base_url + "current.json"
+            return base_url + "current" + suffix
+        
+        case "3-day forecast", "7-day forecast":
+            return base_url + "forecast" + suffix
+        
+        case "history":
+            return base_url + "history" + suffix
+        
+        case "astronomy":
+            return base_url + "astronomy" + suffix
 
 
 def create_request(command, settings):
@@ -159,6 +169,9 @@ def main():
     user_settings = get_user_config()
     run_weather_app(user_settings)
 
+    '''
+    FOR THE FORECAST YOU NEED TO SPECIFY THE NUMBER OF DAYS USING 'days=numberOfDays' 
+    '''
     
 
 
@@ -170,3 +183,6 @@ if __name__ == "__main__":
 
     # add section where once the request is made we check the response code using switch case and 
     # depending on the code we perform certain tasks
+
+    # let the default display have today's weather forecast and then if the user wants to get any
+    # other forecast data they can request for it or click somewhere and get it
