@@ -4,7 +4,6 @@ import json
 from dotenv import load_dotenv
 
 
-
 def get_key():
     load_dotenv("config/.env")
     return os.getenv("WEATHER_API_KEY")
@@ -94,85 +93,30 @@ def get_default_location():
     return response.json()["city"]
 
 
-def get_commands():
+def create_request(settings):
     return {
-        "1" : "current weather",
-        "2" : "3-day forecast",
-        "3" : "7-day forecast",
-        "4" : "history",
-        "5" : "astronomy"
-    }
-
-
-def display_commands(commands):
-    for number,command in commands.items():
-        print(f"{number}. {command.title()}")
-
-
-def get_user_command():
-    commands = get_commands()
-    display_commands(commands)
-
-    while True:
-        command = input("Enter the number of the command that you want to perform: ").strip()
-
-        if command in commands:
-            return commands[command]
-        
-        print(f"Invalid command '{command}'. Please enter a valid command.") 
-
-
-def get_url(command):
-    base_url = "https://api.weatherapi.com/v1/"
-    suffix = ".json"
-
-    match command:
-        case "current weather":
-            return base_url + "current" + suffix
-        
-        case "3-day forecast", "7-day forecast":
-            return base_url + "forecast" + suffix
-        
-        case "history":
-            return base_url + "history" + suffix
-        
-        case "astronomy":
-            return base_url + "astronomy" + suffix
-
-
-def create_request(command, settings):
-    return {
-        "url"    : get_url(command),
-        "config" : {
-            'key': get_key(),
-            'q': settings["Location"]
-        }
+        "url"     : "https://api.weatherapi.com/v1/forecast.json",
+        "config"  : {
+            'key' : get_key(),
+            'q'   : settings['Location'],
+            'days': 3
+        } 
     }
 
 
 def get_response(request):
     response = requests.get(request["url"], request["config"])
     return response.json()
-
-
-def run_weather_app(settings):
-    command = get_user_command()
     
-    request = create_request(command, settings)
-
-    response = get_response(request)
-
-    print(response)
-
 
 def main():
     user_settings = get_user_config()
-    run_weather_app(user_settings)
 
-    '''
-    FOR THE FORECAST YOU NEED TO SPECIFY THE NUMBER OF DAYS USING 'days=numberOfDays' 
-    '''
-    
+    request = create_request(user_settings)
+
+    response = get_response(request)
+
+    print(json.dumps(response,indent=4))
 
 
 if __name__ == "__main__":
