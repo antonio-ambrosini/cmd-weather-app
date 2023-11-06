@@ -1,6 +1,7 @@
 import os
 import requests
 import json
+import datetime
 from dotenv import load_dotenv
 
 
@@ -81,15 +82,8 @@ def prompt_user_for_config():
     return data
 
 
-def get_location_key():
-    load_dotenv("config/.env")
-    return {
-        'Authorization': f'Bearer {os.getenv("LOCATION_API_KEY")}'
-    } 
-
-
 def get_default_location():
-    response = requests.get('http://ipinfo.io', get_location_key())
+    response = requests.get('http://ipinfo.io')
     return response.json()["city"]
 
 
@@ -100,7 +94,7 @@ def create_request(settings):
             'key' : get_key(),
             'q'   : settings['Location'],
             'days': 3
-        } 
+        }
     }
 
 
@@ -109,24 +103,63 @@ def get_response(request):
     return response.json()
     
 
+def get_current_weather(weather_data):
+    return {
+        'city': weather_data['location']['name'],
+        'province': weather_data['location']['region'],
+        'country': weather_data['location']['country'],
+
+        'temperature': weather_data['current']['temp_c'],
+        'weather-description': weather_data['current']['condition']['text'],
+        'icon': weather_data['current']['condition']['icon'],
+        'wind-speed': weather_data['current']['wind_kph'],
+        'wind-direction': weather_data['current']['wind_dir'],
+        'humidity': weather_data['current']['humidity'],
+        'feels-like': weather_data['current']['feelslike_c'],
+        'uv': weather_data['current']['uv'],
+
+        'last-updated': weather_data['current']['last_updated']
+    }
+
+
+def get_hourly_forecast_for_today(weather_data):
+    current_hour = str(datetime.datetime.now())[:14] + "00"
+    today = weather_data['forecast']['forecastday'][0]['hour']
+    
+    for index, hour in enumerate(today):
+        if current_hour == hour['time']:
+            return today[index + 1:]
+
+
+def get_forecast_from_tomorrow(weather_data):
+
+    # overall weather data for the day is stored in weather_data['forecast']['forecastday'][num]['day']
+
+    return {
+        'tomorrow'           : weather_data['forecast']['forecastday'][1],
+        'day after tomorrow' : weather_data['forecast']['forecastday'][2]
+    }
+
+
+
 def main():
     user_settings = get_user_config()
-
     request = create_request(user_settings)
-
     response = get_response(request)
 
-    print(json.dumps(response,indent=4))
+    current_weather = get_current_weather(response)
+    todays_hourly_forecast = get_hourly_forecast_for_today(response)
+    forecast_from_tomorrow = get_forecast_from_tomorrow(response)
 
+    print(current_weather)
+    
+    #display data on tkinter gui
 
 if __name__ == "__main__":
     main()
 
     # also we can have an option to let the user change their settings if for
     # example they relocate
-
-    # add section where once the request is made we check the response code using switch case and 
-    # depending on the code we perform certain tasks
 
     # let the default display have today's weather forecast and then if the user wants to get any
     # other forecast data they can request for it or click somewhere and get it
